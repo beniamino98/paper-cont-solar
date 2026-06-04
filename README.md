@@ -1,93 +1,172 @@
-# cont-solar
+# Solar Energy Risks Replication Package
 
+This replication package accompanies the paper *Solar Energy Risks: Stochastic
+Radiation Modelling and Optimal Hedging Strategies*.
 
+The citable archive is available on Zenodo:
+<https://doi.org/10.5281/zenodo.18065941>.
 
-## Getting started
+## Archive and repository policy
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+The replication folder is intended to be distributed in two forms.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+1. A fixed Zenodo snapshot, used for citation and long-term preservation.
+2. A Git repository initialized from the same snapshot, used only for future
+   maintenance updates.
 
-## Add your files
+The `site_/` folder is a companion website. It is copied into the Zenodo
+archive, and the maintenance Git repository tracks the rendered static site
+under `site_/_site/` so that Netlify can publish it directly from the same
+repository after each push. The site should therefore be rebuilt locally before
+committing updates. This `README.md` is included both in Zenodo and in the Git
+repository.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Folder structure
 
+- `scripts/`: R scripts used to reproduce the empirical pipeline.
+- `scripts/data/`: model estimation, simulations, pricing inputs, moments,
+  diagnostics, and forecasts.
+- `scripts/tables/`: table-generation scripts for the manuscript, appendix,
+  and Supplementary Material.
+- `scripts/figs/`: figure-generation scripts.
+- `scripts/functions/`: local helper functions for the electricity model,
+  radiation model, CTMC calculations, simulations, pricing, figures, and file
+  output.
+- `scripts/tests/testthat/`: unit tests for CTMC and radiation-model helper
+  functions.
+- `data/`: input data and generated model, simulation, pricing, and diagnostic
+  objects.
+- `figs/`: generated figures used in the manuscript and appendix.
+- `outputs.RData`: central registry of output paths, settings, and generated
+  table objects.
+- `environment/`: reproducible R environment files, including `renv.lock` and
+  the full package-version snapshot CSV.
+- `main-v2.qmd`, `appendix-v2.qmd`, `SM1-supplementary-material.qmd`:
+  manuscript, appendix, and Supplementary Material sources.
+- `site_/`: source and rendered files for the companion website distributed
+  with the Zenodo snapshot.
+
+## Software requirements
+
+The scripts were prepared and tested with R 4.4.1. They should be run from the
+root of the replication folder.
+
+The R dependency audit was performed on the active replication sources
+(`scripts/`, `scripts/tests/`, the manuscript/appendix/Supplementary Material
+sources, and the companion-site sources). Deprecated folders, revision-only
+scripts, and generated HTML folders are not part of the replication dependency
+set.
+
+Core R dependencies are:
+
+`solarr`, `readxl`, `Rcpp`, `tidyverse`, `purrr`, `dplyr`, `readr`, `tibble`,
+`tidyr`, `stringr`, `ggplot2`, `lubridate`, `broom`, `R6`, `mixtools`,
+`numDeriv`, `expm`, `cubature`, `mvtnorm`, `quadprog`, `quantreg`, `cli`,
+`crayon`, `gridExtra`, `gridtext`, and `latex2exp`.
+
+For tables, tests, animations, spell checks, and rendered documents, the
+additional requirements are:
+
+`knitr`, `kableExtra`, `testthat`, `gganimate`, `spelling`, `renv`, and Quarto.
+
+The package `solarr` is the project package used by the replication scripts. It
+is available from GitHub at <https://github.com/beniamino98/solarr>. In the
+current lockfile it is recorded as version `1.0.1`. If `renv::restore()` cannot
+retrieve it automatically on a new machine, install it from GitHub first and
+then run the restore command below:
+
+```r
+install.packages("remotes")
+remotes::install_github("beniamino98/solarr")
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/solarr-project-public/cont-solar.git
-git branch -M main
-git push -uf origin main
+
+To reproduce the package versions used for this snapshot, use the included
+lockfile under `environment/renv.lock`:
+
+```r
+install.packages("renv")
+renv::restore(lockfile = "environment/renv.lock", prompt = FALSE)
 ```
 
-## Integrate with your tools
+For quick inspection, `environment/r-package-snapshot.csv` contains the package
+names, versions, source type, and repository recorded from the current R
+library.
 
-* [Set up project integrations](https://gitlab.com/solarr-project-public/cont-solar/-/settings/integrations)
+The folder `scripts/functions/C/` contains C source and compiled shared objects
+used by some numerical routines. Recompilation requires a working C toolchain
+compatible with the local R installation.
 
-## Collaborate with your team
+## Replication pipeline
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+The pipeline is organized in four top-level stages. Use `RScript` if that alias
+is available on the system; otherwise replace it with `Rscript`. The orchestration
+scripts also respect the optional environment variable `RSCRIPT_BIN`.
 
-## Test and Deploy
+```bash
+RScript scripts/s0-outputs.R
+RScript scripts/s1-data.R "TRUE" "5000" "2022" "1,2,3,5,10,15,30"
+RScript scripts/s2-tables.R "TRUE"
+RScript scripts/s3-figures.R "TRUE" "2022" "2014" "FALSE"
+```
 
-Use the built-in continuous integration in GitLab.
+The stages are:
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+1. `scripts/s0-outputs.R`
+   initializes `outputs.RData` and the expected output directories.
 
-***
+2. `scripts/s1-data.R`
+   runs the complete data-generation pipeline. It estimates the radiation
+   models under the historical probability measure, estimates electricity
+   models under historical and risk-neutral measures, estimates residual
+   correlations, simulates joint radiation-electricity paths, computes contract
+   moments and mean-variance objects, and generates diagnostic and forecast
+   data for the Supplementary Material.
 
-# Editing this README
+3. `scripts/s2-tables.R`
+   reads the generated objects and stores manuscript, appendix, and
+   Supplementary Material tables in `outputs.RData`.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+4. `scripts/s3-figures.R`
+   reads the generated objects and writes the figures under `figs/`.
 
-## Suggestions for a good README
+The data stage calls the scripts in `scripts/data/` in this order:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```text
+s0-models-radiation-P-discrete-place.R
+s1-models-radiation-P-IID-place.R
+s2a-models-radiation-P-DTMC-place.R
+s2b-models-radiation-P-CTMC-place.R
+s3-models-electricity-P.R
+s4-models-electricity-Q.R
+s5-models-rho-place.R
+s6-simulate-Rt-Et-place.R
+s7-solarOptions-moments-place.R
+s8-solarOptions-mv-place.R
+s9-models-radiation-P-moments-place.R
+s10-bounds-2gm.R
+SM1-models-radiation-P-diagnostic-place.R
+SM2-models-radiation-P-forecasts-place.R
+```
 
-## Name
-Choose a self-explaining name for your project.
+The default empirical settings are the three locations `Bologna`, `Roma`, and
+`Palermo`, `5000` Monte Carlo scenarios, reference year `2022` for the
+two-Gaussian bounds, and horizons `1, 2, 3, 5, 10, 15, 30`.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## Companion website
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+The website in `site_/` documents the same pipeline at script level and provides
+the compiled Supplementary Material. It is not required for rerunning the
+statistical pipeline, but it is included in the Zenodo snapshot as a convenient
+guide.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+To rebuild the website from the replication folder:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```bash
+quarto render site_/index.qmd --no-execute
+quarto render site_/replication --no-execute
+quarto render site_/SM/index.qmd --no-execute
+quarto render site_/SM/SM1-supplementary-material.qmd
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+The final command executes the Supplementary Material chunks and therefore
+requires the corresponding objects in `site_/SM/outputs.RData`.
