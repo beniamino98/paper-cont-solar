@@ -24,6 +24,7 @@
 #'   - pipeline
 #'   - setup
 # ---
+library(solarr)
 # Initialize an outputs.RData file to store the outputs
 outputs <- list()
 outputs$dir <- list()

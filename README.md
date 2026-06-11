@@ -11,8 +11,9 @@ The citable archive is available on Zenodo:
 The replication material is intended to be distributed in two forms.
 
 1. A fixed Zenodo snapshot, used for citation and long-term preservation.
-2. A selective public Git mirror containing the README, `outputs.RData`, and
-   the scripts/functions needed to reproduce the empirical pipeline.
+2. A selective public Git mirror containing the README, `outputs.RData`, the
+   small public input/example data files, and the scripts/functions needed to
+   reproduce the empirical pipeline.
 
 Private submission files and revision-management material, such as the main
 manuscript, appendix, `revision/`, and rendered site sources, are maintained
@@ -33,8 +34,10 @@ contain additional rendered documentation and environment files.
 - `scripts/tests/testthat/`: unit tests for CTMC and radiation-model helper
   functions.
 - `data/`: input data and generated model, simulation, pricing, and diagnostic
-  objects. In the selective public mirror, these objects should be restored
-  from the Zenodo snapshot before rerunning the full pipeline.
+  objects. In the selective public mirror, only `data/GME_daily.csv` and the
+  curated `data/exm/` example objects are included; remaining generated objects
+  should be restored from the Zenodo snapshot before rerunning the full
+  pipeline.
 - `figs/`: generated figures used in the manuscript and appendix.
 - `outputs.RData`: central registry of output paths, settings, and generated
   table objects.
